@@ -72,9 +72,18 @@ services:
       - q-rabbitmq-network
     env_file:
       - services/report-python/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=UTF-8
     depends_on:
       q-rabbitmq:
         condition: service_healthy
+    # Configuração para logs em tempo real
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   q-rabbitmq-network:

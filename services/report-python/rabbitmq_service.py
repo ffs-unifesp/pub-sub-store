@@ -1,7 +1,13 @@
 import pika
 import os
 import json
+import sys
 from dotenv import load_dotenv
+
+def log_print(message):
+    """Função auxiliar para print com flush imediato"""
+    print(message, flush=True)
+    sys.stdout.flush()
 
 class RabbitMQService:
     def __init__(self):
@@ -19,7 +25,7 @@ class RabbitMQService:
     
     def connect(self):
         """Estabelece conexão com RabbitMQ"""
-        print(f"🔗 Conectando ao RabbitMQ: {self.username}@{self.host}:{self.port}{self.vhost}")
+        log_print(f"🔗 Conectando ao RabbitMQ: {self.username}@{self.host}:{self.port}{self.vhost}")
         credentials = pika.PlainCredentials(self.username, self.password)
         parameters = pika.ConnectionParameters(
             host=self.host,
@@ -31,7 +37,7 @@ class RabbitMQService:
         self.connection = pika.BlockingConnection(parameters)
         self.channel = self.connection.channel()
         self.channel.basic_qos(prefetch_count=1)
-        print("✅ Conexão estabelecida com sucesso!")
+        log_print("✅ Conexão estabelecida com sucesso!")
     
     def declare_queue(self, queue_name):
         """Declara uma fila com configurações duráveis e lazy"""
@@ -43,19 +49,20 @@ class RabbitMQService:
     
     def consume(self, queue_name, callback):
         """Consome mensagens de uma fila"""
-        print(f"📦 Declarando fila: {queue_name}")
+        log_print(f"📦 Declarando fila: {queue_name}")
         self.declare_queue(queue_name)
-        print(f"👂 Iniciando consumo da fila: {queue_name}")
+        log_print(f"👂 Iniciando consumo da fila: {queue_name}")
         self.channel.basic_consume(
             queue=queue_name,
             on_message_callback=callback,
             auto_ack=False
         )
         
-        print(f" [*] Aguardando mensagens da fila '{queue_name}'. Para sair pressione CTRL+C")
+        log_print(f" [*] Aguardando mensagens da fila '{queue_name}'. Para sair pressione CTRL+C")
         self.channel.start_consuming()
     
     def close(self):
         """Fecha a conexão"""
         if self.connection and not self.connection.is_closed:
             self.connection.close()
+            log_print("🔌 Conexão com RabbitMQ fechada")

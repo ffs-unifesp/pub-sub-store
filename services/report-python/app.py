@@ -1,7 +1,13 @@
 import json
 import os
+import sys
 from datetime import datetime
 from rabbitmq_service import RabbitMQService
+
+def log_print(message):
+    """Função auxiliar para print com flush imediato"""
+    print(message, flush=True)
+    sys.stdout.flush()
 
 def save_report_to_file(report_data):
     """Salva o relatório em um arquivo JSON no diretório reports"""
@@ -19,24 +25,24 @@ def save_report_to_file(report_data):
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(report_data, f, indent=2, ensure_ascii=False)
         
-        print(f"[RELATÓRIO] Arquivo salvo: {filepath}")
+        log_print(f"[RELATÓRIO] Arquivo salvo: {filepath}")
         return filepath
         
     except Exception as e:
-        print(f"[ERRO] Falha ao salvar arquivo: {e}")
+        log_print(f"[ERRO] Falha ao salvar arquivo: {e}")
         return None
 
 def print_report(data):
     """Imprime o relatório no console e salva em arquivo"""
-    print("\n" + "="*50)
-    print("         RELATÓRIO DE VENDAS")
-    print("="*50)
+    log_print("\n" + "="*50)
+    log_print("         RELATÓRIO DE VENDAS")
+    log_print("="*50)
     
     if isinstance(data, str):
         try:
             data = json.loads(data)
         except json.JSONDecodeError:
-            print(f"[ERRO] Dados inválidos recebidos: {data}")
+            log_print(f"[ERRO] Dados inválidos recebidos: {data}")
             return
     
     # Extrair dados
@@ -47,12 +53,12 @@ def print_report(data):
     timestamp = data.get('timestamp', datetime.now().isoformat())
     
     # Imprimir relatório
-    print(f"ID do Pedido: {order_id}")
-    print(f"Produto: {product}")
-    print(f"Preço: R$ {price:.2f}")
-    print(f"Cliente: {customer}")
-    print(f"Data/Hora: {timestamp}")
-    print("="*50)
+    log_print(f"ID do Pedido: {order_id}")
+    log_print(f"Produto: {product}")
+    log_print(f"Preço: R$ {price:.2f}")
+    log_print(f"Cliente: {customer}")
+    log_print(f"Data/Hora: {timestamp}")
+    log_print("="*50)
     
     # Criar estrutura de relatório mais detalhada
     report_data = {
@@ -74,12 +80,12 @@ def print_report(data):
     # Salvar em arquivo
     filepath = save_report_to_file(report_data)
     if filepath:
-        print(f"[INFO] Relatório também foi salvo em: {filepath}")
+        log_print(f"[INFO] Relatório também foi salvo em: {filepath}")
 
 def process_message(ch, method, properties, body):
     """Processa a mensagem recebida da fila"""
     try:
-        print(f"[DEBUG] Mensagem recebida: {body}")
+        log_print(f"[DEBUG] Mensagem recebida: {body}")
         
         # Decodificar mensagem
         message_data = body.decode('utf-8')
@@ -89,23 +95,23 @@ def process_message(ch, method, properties, body):
         
         # Confirmar processamento da mensagem
         ch.basic_ack(delivery_tag=method.delivery_tag)
-        print("[INFO] Mensagem processada com sucesso!")
+        log_print("[INFO] Mensagem processada com sucesso!")
         
     except Exception as e:
-        print(f"[ERRO] Falha ao processar mensagem: {e}")
+        log_print(f"[ERRO] Falha ao processar mensagem: {e}")
         # Rejeitar mensagem em caso de erro
         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
 if __name__ == "__main__":
-    print("[INFO] Iniciando serviço de relatórios Python...")
-    print("[INFO] Aguardando mensagens da fila 'report'...")
+    log_print("[INFO] Iniciando serviço de relatórios Python...")
+    log_print("[INFO] Aguardando mensagens da fila 'report'...")
     
     # Criar diretório de relatórios se não existir
     try:
         os.makedirs('/var/www/reports', exist_ok=True)
-        print("[INFO] Diretório de relatórios criado/verificado: /var/www/reports")
+        log_print("[INFO] Diretório de relatórios criado/verificado: /var/www/reports")
     except Exception as e:
-        print(f"[AVISO] Não foi possível criar diretório de relatórios: {e}")
+        log_print(f"[AVISO] Não foi possível criar diretório de relatórios: {e}")
     
     try:
         # Criar instância do serviço RabbitMQ
@@ -115,10 +121,10 @@ if __name__ == "__main__":
         # Consumir mensagens da fila 'report'
         rabbitmq_service.consume('report', process_message)
     except KeyboardInterrupt:
-        print("\n[INFO] Serviço interrompido pelo usuário")
+        log_print("\n[INFO] Serviço interrompido pelo usuário")
         if 'rabbitmq_service' in locals():
             rabbitmq_service.close()
     except Exception as e:
-        print(f"[ERRO] Falha no serviço: {e}")
+        log_print(f"[ERRO] Falha no serviço: {e}")
         if 'rabbitmq_service' in locals():
             rabbitmq_service.close()

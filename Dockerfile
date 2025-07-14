@@ -20,4 +20,7 @@ FROM python:3.9-alpine AS report-python-service
 WORKDIR /var/www/
 ADD services/report-python/ .
 RUN pip install --no-cache-dir -r requirements.txt
-CMD [ "python", "app.py" ]
+# Desabilitar buffering do Python para logs em tempo real
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONIOENCODING=UTF-8
+CMD [ "python", "-u", "app.py" ]
