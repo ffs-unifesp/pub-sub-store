@@ -85,3 +85,5 @@ docker exec report-python-service env | grep PYTHON
 # Testar Python unbuffered dentro do container
 docker exec report-python-service python -c "import sys; print('Unbuffered:', not sys.stdout.isatty(), flush=True)"
 ```
+
+
